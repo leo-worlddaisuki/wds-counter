@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WDSカウンター">
+<title>ワールドダイスター 小役カウンター</title>
+<style>
+  :root {
+    --bg: #12131a;
+    --card: #1e202c;
+    --border: #2f3346;
+    --text: #f0f2f8;
+    --sub: #9aa0b8;
+    --accent: #e94560;
+    --gold: #f5b041;
+    --blue: #3498db;
+    --green: #2ecc71;
+    --purple: #9b59b6;
+    --cyan: #1abc9c;
+    --pink: #e84393;
+  }
+  * {
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  body {
+    margin: 0;
+    padding: 12px 12px 56px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+  h1 {
+    font-size: 15px;
+    margin: 0;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+  .header-btns {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .mini-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .mini-btn.active {
+    background: var(--green);
+    color: #000;
+    border-color: var(--green);
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 12px;
+    color: var(--sub);
+    margin: 0 0 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  /* ゲーム数エリア */
+  .g-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .g-box label {
+    display: block;
+    font-size: 11px;
+    color: var(--sub);
+    margin-bottom: 3px;
+  }
+  .g-box input {
+    width: 100%;
+    background: #12131a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: bold;
+    padding: 6px 8px;
+    border-radius: 8px;
+    text-align: right;
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+  .total-g {
+    text-align: right;
+  }
+  .total-g span {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--gold);
+  }
+  /* モード切替バー */
+  .mode-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    color: var(--sub);
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+  }
+  .mode-btn.plus.selected {
+    border-color: var(--blue);
+    background: rgba(52, 152, 219, 0.2);
+    color: #fff;
+  }
+  .mode-btn.minus.selected {
+    border-color: var(--accent);
+    background: rgba(233, 69, 96, 0.25);
+    color: #fff;
+  }
+  /* カウントボタングリッド */
+  .btn-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .btn-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .slot-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* キャラ画像対応カウントボタン */
+  .count-btn {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    min-height: 92px;
+    background: #262938;
+    border: 1px solid #3a3f56;
+    border-radius: 10px;
+    padding: 8px 6px;
+    color: var(--text);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .count-btn .chara-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    opacity: 0.36;
+    pointer-events: none;
+    display: none;
+  }
+  .count-btn.has-img .chara-bg {
+    display: block;
+  }
+  .count-btn.has-img {
+    background: #171923;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.8);
+  }
+  .count-btn > *:not(.chara-bg) {
+    position: relative;
+    z-index: 1;
+  }
+  .count-btn:active, .step-btn:active, .pt-btn:active, .zone-sub-btn:active {
+    transform: scale(0.96);
+    opacity: 0.85;
+  }
+  .count-btn .name {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 3px;
+    display: block;
+  }
+  .count-btn .num {
+    font-size: 24px;
+    font-weight: 800;
+    display: block;
+    line-height: 1.1;
+  }
+  .count-btn .prob {
+    font-size: 11px;
+    color: #d0d5e8;
+    margin-top: 3px;
+    display: block;
+  }
+
+  /* ゲーム数当選（◯/◯）カード */
+  .zone-card {
+    position: relative;
+    overflow: hidden;
+    background: #262938;
+    border: 1px solid #3a3f56;
+    border-top: 3px solid var(--cyan);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .zone-card .chara-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    opacity: 0.28;
+    pointer-events: none;
+    display: none;
+  }
+  .zone-card.has-img .chara-bg {
+    display: block;
+  }
+  .zone-card.has-img {
+    background: #171923;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  }
+  .zone-card > *:not(.chara-bg) {
+    position: relative;
+    z-index: 1;
+  }
+  .zone-card .zone-name {
+    font-size: 12px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .zone-ratio {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+  }
+  .zone-ratio .hit {
+    color: var(--gold);
+  }
+  .zone-ratio .sep {
+    color: var(--sub);
+    margin: 0 2px;
+  }
+  .zone-rate {
+    font-size: 11px;
+    color: #d0d5e8;
+    margin: 3px 0 6px;
+  }
+  .zone-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .zone-sub-btn {
+    background: rgba(24, 26, 36, 0.9);
+    border: 1px solid #353a50;
+    border-radius: 7px;
+    padding: 6px 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .zone-sub-btn.hit-btn {
+    border-color: rgba(245, 176, 65, 0.45);
+    color: #ffd68a;
+  }
+  body.minus-active .zone-sub-btn {
+    border-color: rgba(233, 69, 96, 0.55);
+    color: #ff9aa9;
+  }
+
+  /* +5 / +10 クイックボタン */
+  .quick-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .step-btn {
+    background: #1a1c26;
+    border: 1px solid #343950;
+    border-radius: 7px;
+    padding: 6px 4px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  body.minus-active .step-btn,
+  body.minus-active .pt-btn {
+    border-color: rgba(233, 69, 96, 0.5);
+    color: #ff9aa9;
+  }
+
+  /* 努力の破片ポイント */
+  .pt-display {
+    position: relative;
+    overflow: hidden;
+    background: rgba(232, 67, 147, 0.14);
+    border: 1px solid rgba(232, 67, 147, 0.4);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .pt-display .chara-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.32;
+    pointer-events: none;
+    display: none;
+  }
+  .pt-display.has-img .chara-bg {
+    display: block;
+  }
+  .pt-display > *:not(.chara-bg) {
+    position: relative;
+    z-index: 1;
+  }
+  .pt-display .label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #ff9ed0;
+  }
+  .pt-display .val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .pt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .pt-btn {
+    background: #262938;
+    border: 1px solid #3a3f56;
+    border-radius: 8px;
+    padding: 10px 4px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  /* 色分けアクセント */
+  .c-gold { border-top: 3px solid var(--gold); }
+  .c-purple { border-top: 3px solid var(--purple); }
+  .c-blue { border-top: 3px solid var(--blue); }
+  .c-green { border-top: 3px solid var(--green); }
+
+  /* 画像設定モーダル */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 100;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.open {
+    display: block;
+  }
+  .modal-box {
+    max-width: 520px;
+    margin: 20px auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .modal-head h2 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--gold);
+  }
+  .img-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+    font-size: 12px;
+  }
+  .img-row-actions {
+    display: flex;
+    gap: 5px;
+  }
+  .small-act {
+    background: #262938;
+    border: 1px solid #3d435c;
+    color: var(--text);
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* メモ欄 */
+  textarea {
+    width: 100%;
+    height: 60px;
+    background: #12131a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px;
+    font-size: 13px;
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ワールドダイスター 小役</h1>
+  <div class="header-btns">
+    <button class="mini-btn" onclick="openImgModal()">キャラ画像</button>
+    <button id="wakeBtn" class="mini-btn" onclick="toggleWakeLock()">スリープ防止: OFF</button>
+    <button class="mini-btn" onclick="resetAll()">全リセット</button>
+  </div>
+</header>
+
+<!-- ゲーム数入力 -->
+<div class="card">
+  <div class="g-grid">
+    <div class="g-box">
+      <label>打ち始めG</label>
+      <input type="number" id="startG" inputmode="numeric" placeholder="0" oninput="update()">
+    </div>
+    <div class="g-box">
+      <label>現在G</label>
+      <input type="number" id="currentG" inputmode="numeric" placeholder="0" oninput="update()">
+    </div>
+    <div class="total-g">
+      <div style="font-size:11px; color:var(--sub);">消化ゲーム数</div>
+      <span id="totalG">0</span> <small>G</small>
+    </div>
+  </div>
+</div>
+
+<!-- +1 / -1 モード切替 -->
+<div class="mode-bar">
+  <div id="modePlus" class="mode-btn plus selected" onclick="setMode(1)">＋1 カウント</div>
+  <div id="modeMinus" class="mode-btn minus" onclick="setMode(-1)">−1 修正モード</div>
+</div>
+
+<!-- 1. 下段ベル確率 -->
+<div class="card">
+  <div class="section-title">
+    <span>下段ベル（確率確認用）</span>
+  </div>
+  <div class="btn-grid-1">
+    <div id="btn_gedanBell" class="count-btn c-gold" onclick="tap('gedanBell', 1)">
+      <img class="chara-bg" alt="">
+      <span class="name">下段ベル</span>
+      <span class="num" id="cnt_gedanBell">0</span>
+      <span class="prob" id="prob_gedanBell">-</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2. チャンス目3種類（ポイント確認用） -->
+<div class="card">
+  <div class="section-title">
+    <span>チャンス目3種（pt確認用）</span>
+    <span>合算: <strong id="chSumCount" style="color:#fff;">0</strong>回 (<span id="chSumProb">-</span>)</span>
+  </div>
+  <div class="btn-grid-3">
+    <div class="slot-box">
+      <div id="btn_chLeft" class="count-btn c-purple" onclick="tap('chLeft', 1)">
+        <img class="chara-bg" alt="">
+        <span class="name">左チャンス目</span>
+        <span class="num" id="cnt_chLeft">0</span>
+        <span class="prob" id="prob_chLeft">-</span>
+      </div>
+      <div class="quick-row">
+        <div class="step-btn" data-step="5" onclick="tap('chLeft', 5)">+5</div>
+        <div class="step-btn" data-step="10" onclick="tap('chLeft', 10)">+10</div>
+      </div>
+    </div>
+    <div class="slot-box">
+      <div id="btn_chMid" class="count-btn c-purple" onclick="tap('chMid', 1)">
+        <img class="chara-bg" alt="">
+        <span class="name">中チャンス目</span>
+        <span class="num" id="cnt_chMid">0</span>
+        <span class="prob" id="prob_chMid">-</span>
+      </div>
+      <div class="quick-row">
+        <div class="step-btn" data-step="5" onclick="tap('chMid', 5)">+5</div>
+        <div class="step-btn" data-step="10" onclick="tap('chMid', 10)">+10</div>
+      </div>
+    </div>
+    <div class="slot-box">
+      <div id="btn_chRight" class="count-btn c-purple" onclick="tap('chRight', 1)">
+        <img class="chara-bg" alt="">
+        <span class="name">右チャンス目</span>
+        <span class="num" id="cnt_chRight">0</span>
+        <span class="prob" id="prob_chRight">-</span>
+      </div>
+      <div class="quick-row">
+        <div class="step-btn" data-step="5" onclick="tap('chRight', 5)">+5</div>
+        <div class="step-btn" data-step="10" onclick="tap('chRight', 10)">+10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. リプレイ・ベル（ポイント確認用） -->
+<div class="card">
+  <div class="section-title">
+    <span>リプレイ・ベル（pt確認用）</span>
+  </div>
+  <div class="btn-grid-2">
+    <div class="slot-box">
+      <div id="btn_replay" class="count-btn c-blue" onclick="tap('replay', 1)">
+        <img class="chara-bg" alt="">
+        <span class="name">リプレイ</span>
+        <span class="num" id="cnt_replay">0</span>
+        <span class="prob" id="prob_replay">-</span>
+      </div>
+      <div class="quick-row">
+        <div class="step-btn" data-step="5" onclick="tap('replay', 5)">+5</div>
+        <div class="step-btn" data-step="10" onclick="tap('replay', 10)">+10</div>
+      </div>
+    </div>
+    <div class="slot-box">
+      <div id="btn_normalBell" class="count-btn c-green" onclick="tap('normalBell', 1)">
+        <img class="chara-bg" alt="">
+        <span class="name">ベル</span>
+        <span class="num" id="cnt_normalBell">0</span>
+        <span class="prob" id="prob_normalBell">-</span>
+      </div>
+      <div class="quick-row">
+        <div class="step-btn" data-step="5" onclick="tap('normalBell', 5)">+5</div>
+        <div class="step-btn" data-step="10" onclick="tap('normalBell', 10)">+10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. ゲーム数当選（当選 / 到達） -->
+<div class="card">
+  <div class="section-title">
+    <span>ゲーム数当選（当選 / 到達）</span>
+    <span>合計: <strong id="zoneSumRatio" style="color:#fff;">0 / 0</strong> (<span id="zoneSumRate">-</span>)</span>
+  </div>
+  <div class="btn-grid-3">
+    <div id="card_zone100" class="zone-card">
+      <img class="chara-bg" alt="">
+      <span class="zone-name">100G</span>
+      <div class="zone-ratio"><span class="hit" id="hit_zone100">0</span><span class="sep">/</span><span id="reach_zone100">0</span></div>
+      <div class="zone-rate" id="rate_zone100">-</div>
+      <div class="zone-actions">
+        <div class="zone-sub-btn hit-btn" onclick="tapZone('zone100', 'hit')">当選</div>
+        <div class="zone-sub-btn" onclick="tapZone('zone100', 'reach')">到達</div>
+      </div>
+    </div>
+    <div id="card_zone300" class="zone-card">
+      <img class="chara-bg" alt="">
+      <span class="zone-name">300G</span>
+      <div class="zone-ratio"><span class="hit" id="hit_zone300">0</span><span class="sep">/</span><span id="reach_zone300">0</span></div>
+      <div class="zone-rate" id="rate_zone300">-</div>
+      <div class="zone-actions">
+        <div class="zone-sub-btn hit-btn" onclick="tapZone('zone300', 'hit')">当選</div>
+        <div class="zone-sub-btn" onclick="tapZone('zone300', 'reach')">到達</div>
+      </div>
+    </div>
+    <div id="card_zone600" class="zone-card">
+      <img class="chara-bg" alt="">
+      <span class="zone-name">600G</span>
+      <div class="zone-ratio"><span class="hit" id="hit_zone600">0</span><span class="sep">/</span><span id="reach_zone600">0</span></div>
+      <div class="zone-rate" id="rate_zone600">-</div>
+      <div class="zone-actions">
+        <div class="zone-sub-btn hit-btn" onclick="tapZone('zone600', 'hit')">当選</div>
+        <div class="zone-sub-btn" onclick="tapZone('zone600', 'reach')">到達</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 努力の破片ポイント -->
+<div class="card">
+  <div class="section-title">
+    <span>努力の破片ポイント</span>
+  </div>
+  <div id="ptDisplay" class="pt-display">
+    <img class="chara-bg" alt="">
+    <span class="label">累計ポイント</span>
+    <span class="val"><span id="fragmentPt">0</span> <small style="font-size:13px; color:#e6d5df;">pt</small></span>
+  </div>
+  <div class="pt-grid">
+    <div class="pt-btn" data-pt="1" onclick="addFragmentPt(1)">+1</div>
+    <div class="pt-btn" data-pt="3" onclick="addFragmentPt(3)">+3</div>
+    <div class="pt-btn" data-pt="5" onclick="addFragmentPt(5)">+5</div>
+  </div>
+</div>
+
+<!-- 自由メモ -->
+<div class="card">
+  <div class="section-title"><span>実戦メモ（ptテーブル・示唆など）</span></div>
+  <textarea id="memo" placeholder="例：リプ3回でpt到達、左チャンス目で+ptなど" oninput="save()"></textarea>
+</div>
+
+<!-- キャラ画像設定モーダル -->
+<div id="imgModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>キャラ画像の設定</h2>
+      <button class="small-act" onclick="closeImgModal()">閉じる</button>
+    </div>
+    <p style="font-size:11px; color:var(--sub); margin:0 0 8px; line-height:1.5;">
+      「選ぶ」からiPhoneの画像を指定すると端末内に保存されます。GitHubに画像ファイル（例: <code>./images/kokona.png</code>）を置く場合は、下部の <code>DEFAULT_IMAGES</code> にパスを書くこともできます。
+    </p>
+    <input type="file" id="imgFileInput" accept="image/*" style="display:none;" onchange="handleImgSelected(event)">
+    <div id="imgList"></div>
+  </div>
+</div>
+
+<script>
+  // GitHubなどに画像ファイルを配置する場合は、ここにパスを記入してください（例: './images/ch1.png'）
+  const DEFAULT_IMAGES = {
+    gedanBell: '',
+    chLeft: '',
+    chMid: '',
+    chRight: '',
+    replay: '',
+    normalBell: '',
+    zone100: '',
+    zone300: '',
+    zone600: '',
+    fragment: ''
+  };
+
+  const IMAGE_TARGETS = [
+    { key: 'gedanBell', label: '下段ベル', elId: 'btn_gedanBell' },
+    { key: 'chLeft', label: '左チャンス目', elId: 'btn_chLeft' },
+    { key: 'chMid', label: '中チャンス目', elId: 'btn_chMid' },
+    { key: 'chRight', label: '右チャンス目', elId: 'btn_chRight' },
+    { key: 'replay', label: 'リプレイ', elId: 'btn_replay' },
+    { key: 'normalBell', label: 'ベル', elId: 'btn_normalBell' },
+    { key: 'zone100', label: '100G当選', elId: 'card_zone100' },
+    { key: 'zone300', label: '300G当選', elId: 'card_zone300' },
+    { key: 'zone600', label: '600G当選', elId: 'card_zone600' },
+    { key: 'fragment', label: '努力の破片pt', elId: 'ptDisplay' }
+  ];
+
+  const STORAGE_KEY = 'wds_pachislot_counter_v7';
+  const ZONES = ['zone100', 'zone300', 'zone600'];
+  let modeSign = 1;
+  let wakeLock = null;
+  let activePickingKey = null;
+
+  let data = {
+    startG: '',
+    currentG: '',
+    memo: '',
+    fragmentPt: 0,
+    customImages: {},
+    counts: {
+      gedanBell: 0,
+      chLeft: 0,
+      chMid: 0,
+      chRight: 0,
+      replay: 0,
+      normalBell: 0
+    },
+    zones: {
+      zone100: { hit: 0, reach: 0 },
+      zone300: { hit: 0, reach: 0 },
+      zone600: { hit: 0, reach: 0 }
+    }
+  };
+
+  function load() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const mergedZones = {};
+        for (const z of ZONES) {
+          const pz = (parsed.zones && parsed.zones[z]) || {};
+          const hit = Math.max(0, pz.hit || 0);
+          const reach = Math.max(hit, pz.reach || 0);
+          mergedZones[z] = { hit, reach };
+        }
+        data = {
+          ...data,
+          ...parsed,
+          fragmentPt: parsed.fragmentPt || 0,
+          customImages: { ...(parsed.customImages || {}) },
+          counts: { ...data.counts, ...(parsed.counts || {}) },
+          zones: mergedZones
+        };
+      } catch (e) {}
+    }
+    document.getElementById('startG').value = data.startG;
+    document.getElementById('currentG').value = data.currentG;
+    document.getElementById('memo').value = data.memo;
+    applyImages();
+    update(false);
+  }
+
+  function save() {
+    data.startG = document.getElementById('startG').value;
+    data.currentG = document.getElementById('currentG').value;
+    data.memo = document.getElementById('memo').value;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      alert('画像容量が大きいため保存できませんでした。小さめの画像をお試しください。');
+    }
+  }
+
+  function applyImages() {
+    for (const item of IMAGE_TARGETS) {
+      const box = document.getElementById(item.elId);
+      if (!box) continue;
+      const imgEl = box.querySelector('img.chara-bg');
+      if (!imgEl) continue;
+      const src = data.customImages[item.key] || DEFAULT_IMAGES[item.key] || '';
+      if (src) {
+        imgEl.src = src;
+        box.classList.add('has-img');
+      } else {
+        imgEl.removeAttribute('src');
+        box.classList.remove('has-img');
+      }
+    }
+  }
+
+  function openImgModal() {
+    const list = document.getElementById('imgList');
+    list.innerHTML = '';
+    for (const item of IMAGE_TARGETS) {
+      const hasCustom = Boolean(data.customImages[item.key]);
+      const hasDefault = Boolean(DEFAULT_IMAGES[item.key]);
+      const statusText = hasCustom ? '設定中(端末保存)' : (hasDefault ? '設定中(コード指定)' : '未設定');
+
+      const row = document.createElement('div');
+      row.className = 'img-row';
+      row.innerHTML = `
+        <div>
+          <strong>${item.label}</strong><br>
+          <span style="color:var(--sub); font-size:11px;">${statusText}</span>
+        </div>
+        <div class="img-row-actions">
+          <button class="small-act" onclick="pickImageFor('${item.key}')">選ぶ</button>
+          <button class="small-act" onclick="clearImageFor('${item.key}')">解除</button>
+        </div>
+      `;
+      list.appendChild(row);
+    }
+    document.getElementById('imgModal').classList.add('open');
+  }
+
+  function closeImgModal() {
+    document.getElementById('imgModal').classList.remove('open');
+    activePickingKey = null;
+  }
+
+  function pickImageFor(key) {
+    activePickingKey = key;
+    const input = document.getElementById('imgFileInput');
+    input.value = '';
+    input.click();
+  }
+
+  function handleImgSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file || !activePickingKey) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        // iPhoneのlocalStorage容量制限を考慮し、最大360px幅にリサイズして保存
+        const maxW = 360;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        data.customImages[activePickingKey] = canvas.toDataURL('image/jpeg', 0.82);
+        applyImages();
+        save();
+        openImgModal();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearImageFor(key) {
+    delete data.customImages[key];
+    applyImages();
+    save();
+    openImgModal();
+  }
+
+  function setMode(val) {
+    modeSign = val;
+    const isMinus = val === -1;
+    document.getElementById('modePlus').classList.toggle('selected', !isMinus);
+    document.getElementById('modeMinus').classList.toggle('selected', isMinus);
+    document.body.classList.toggle('minus-active', isMinus);
+
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      const baseStep = btn.getAttribute('data-step');
+      btn.textContent = (isMinus ? '-' : '+') + baseStep;
+    });
+    document.querySelectorAll('.pt-btn').forEach(btn => {
+      const basePt = btn.getAttribute('data-pt');
+      btn.textContent = (isMinus ? '-' : '+') + basePt;
+    });
+  }
+
+  function tap(key, amount = 1) {
+    const delta = amount * modeSign;
+    data.counts[key] = Math.max(0, (data.counts[key] || 0) + delta);
+    if (navigator.vibrate) navigator.vibrate(15);
+    update();
+  }
+
+  function tapZone(zoneKey, type) {
+    const z = data.zones[zoneKey];
+    if (type === 'hit') {
+      const nextHit = Math.max(0, z.hit + modeSign);
+      z.hit = nextHit;
+      if (modeSign > 0 && z.reach < nextHit) {
+        z.reach = nextHit;
+      }
+    } else {
+      const nextReach = Math.max(0, z.reach + modeSign);
+      z.reach = nextReach;
+      if (z.hit > nextReach) {
+        z.hit = nextReach;
+      }
+    }
+    if (navigator.vibrate) navigator.vibrate(15);
+    update();
+  }
+
+  function addFragmentPt(amount) {
+    const delta = amount * modeSign;
+    data.fragmentPt = Math.max(0, (data.fragmentPt || 0) + delta);
+    if (navigator.vibrate) navigator.vibrate(15);
+    update();
+  }
+
+  function calcProb(totalG, count) {
+    if (totalG <= 0 || count <= 0) return '-';
+    return '1/' + (totalG / count).toFixed(1);
+  }
+
+  function calcRate(hit, reach) {
+    if (reach <= 0) return '-';
+    return ((hit / reach) * 100).toFixed(1) + '%';
+  }
+
+  function update(shouldSave = true) {
+    const s = parseInt(document.getElementById('startG').value, 10) || 0;
+    const c = parseInt(document.getElementById('currentG').value, 10) || 0;
+    const totalG = Math.max(0, c - s);
+    document.getElementById('totalG').textContent = totalG;
+
+    for (const key in data.counts) {
+      const cnt = data.counts[key];
+      document.getElementById('cnt_' + key).textContent = cnt;
+      const probEl = document.getElementById('prob_' + key);
+      if (probEl) {
+        probEl.textContent = calcProb(totalG, cnt);
+      }
+    }
+
+    const chSum = data.counts.chLeft + data.counts.chMid + data.counts.chRight;
+    document.getElementById('chSumCount').textContent = chSum;
+    document.getElementById('chSumProb').textContent = calcProb(totalG, chSum);
+
+    let sumHit = 0;
+    let sumReach = 0;
+    for (const zKey of ZONES) {
+      const z = data.zones[zKey];
+      sumHit += z.hit;
+      sumReach += z.reach;
+      document.getElementById('hit_' + zKey).textContent = z.hit;
+      document.getElementById('reach_' + zKey).textContent = z.reach;
+      document.getElementById('rate_' + zKey).textContent = calcRate(z.hit, z.reach);
+    }
+    document.getElementById('zoneSumRatio').textContent = `${sumHit} / ${sumReach}`;
+    document.getElementById('zoneSumRate').textContent = calcRate(sumHit, sumReach);
+
+    document.getElementById('fragmentPt').textContent = data.fragmentPt || 0;
+
+    if (shouldSave) save();
+  }
+
+  function resetAll() {
+    if (!confirm('カウントとゲーム数をすべてリセットしますか？（キャラ画像は保持されます）')) return;
+    data.startG = '';
+    data.currentG = '';
+    data.memo = '';
+    data.fragmentPt = 0;
+    for (const key in data.counts) data.counts[key] = 0;
+    for (const zKey of ZONES) data.zones[zKey] = { hit: 0, reach: 0 };
+    document.getElementById('startG').value = '';
+    document.getElementById('currentG').value = '';
+    document.getElementById('memo').value = '';
+    setMode(1);
+    update();
+  }
+
+  async function toggleWakeLock() {
+    const btn = document.getElementById('wakeBtn');
+    if (!('wakeLock' in navigator)) {
+      alert('このブラウザはスリープ防止機能に非対応です');
+      return;
+    }
+    if (wakeLock === null) {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        btn.textContent = 'スリープ防止: ON';
+        btn.classList.add('active');
+        wakeLock.addEventListener('release', () => {
+          wakeLock = null;
+          btn.textContent = 'スリープ防止: OFF';
+          btn.classList.remove('active');
+        });
+      } catch (err) {}
+    } else {
+      await wakeLock.release();
+      wakeLock = null;
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>
